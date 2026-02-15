@@ -1,0 +1,8 @@
+.env
+node_modules
+frontend/node_modules
+backend/node_modules
+exports/inventory_export_2026-02-15T10-09-12-909Z.json
+scraper/exports
+scraper/export_db.js
+scraper/node_modules

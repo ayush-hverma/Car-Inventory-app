@@ -1,0 +1,28 @@
+name: Car Inventory Sync
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # runs every 24 hours (UTC)
+  workflow_dispatch:       # manual run option
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run scraper
+        run: node scraper.js
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
