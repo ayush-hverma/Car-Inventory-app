@@ -5,6 +5,46 @@ import {
 } from 'recharts';
 
 const AnalysisDashboard = ({ inventory }) => {
+    // CSV Export Logic
+    const handleExportCSV = () => {
+        if (!inventory.length) return;
+
+        const headers = [
+            "Vehicle Name",
+            "VIN",
+            "Year",
+            "Price ($)",
+            "Mileage (km)",
+            "Transmission",
+            "Fuel Type",
+            "Status",
+            "Listing URL"
+        ];
+
+        const csvRows = inventory.map(car => [
+            `"${car.title || 'N/A'}"`,
+            `"${car.vin || 'N/A'}"`,
+            car.year || 'N/A',
+            car.price || 0,
+            car.mileage || 0,
+            `"${car.transmission || 'N/A'}"`,
+            `"${car.fuelType || 'N/A'}"`,
+            `"${car.status || 'N/A'}"`,
+            `"${car.listing_url || 'N/A'}"`
+        ].join(','));
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `scraped_inventory_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Data Processing for Charts
     const stats = useMemo(() => {
         if (!inventory.length) return null;
@@ -61,6 +101,17 @@ const AnalysisDashboard = ({ inventory }) => {
 
     return (
         <div className="analysis-dashboard">
+            <div className="dashboard-header">
+                <h2>Analysis Dashboard</h2>
+                <button onClick={handleExportCSV} className="export-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
             <div className="metrics-row">
                 <div className="metric-card">
                     <h3>Total Inventory</h3>
