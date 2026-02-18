@@ -26,3 +26,10 @@ jobs:
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
+      - name: Trigger ML Training Pipeline
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.TRAIN_DISPATCH_TOKEN }}
+          repository: ayush-hverma/Autoinsight-prediction-model
+          event-type: train_model
+

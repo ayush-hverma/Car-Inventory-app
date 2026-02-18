@@ -16,11 +16,11 @@ async function scrape() {
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
 
-        console.log('Launching browser...');
-        browser = await puppeteer.launch({ 
+        browser = await puppeteer.launch({
             headless: "new",
+            // slowMo: 100,
             args: ["--no-sandbox", "--disable-setuid-sandbox"]
-         }
+        }
         );
         const page = await browser.newPage();
 
@@ -32,15 +32,65 @@ async function scrape() {
 
         // Wait for inventory items to load
         const itemSelector = '.listing-tile-wrapper';
+        const loadMoreSelector = '.listing-used-button-loading.sr-button-1';
 
         console.log('Waiting for inventory items...');
-        let hasItems = true;
         try {
             await page.waitForSelector(itemSelector, { timeout: 15000 });
         } catch (e) {
             console.log('No inventory items found on current page within timeout.');
-            hasItems = false;
         }
+
+        // Pagination: Click "Load More" until all items are loaded
+        console.log('Checking for "Load More" button...');
+        let canLoadMore = true;
+        let lastCount = 0;
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        while (canLoadMore) {
+            const currentItems = await page.$$(itemSelector);
+            const currentCount = currentItems.length;
+            console.log(`Currently visible items: ${currentCount}`);
+
+            if (currentCount > lastCount) {
+                lastCount = currentCount;
+                retryCount = 0;
+            }
+
+            try {
+                // Find button by selector or text
+                const loadMoreBtn = await page.evaluateHandle((selector) => {
+                    const btn = document.querySelector(selector);
+                    if (btn && btn.offsetParent !== null) return btn;
+                    return Array.from(document.querySelectorAll('button, .sr-button-1'))
+                        .find(b => b.innerText.includes('LOAD MORE') && b.offsetParent !== null);
+                }, loadMoreSelector);
+
+                const btnElement = loadMoreBtn.asElement();
+                if (btnElement) {
+                    console.log('Clicking "Load More"...');
+                    await btnElement.click();
+                    // Wait for new items to appear
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                } else {
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        console.log(`"Load More" button not found/visible. Retry ${retryCount}/${maxRetries}...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    } else {
+                        console.log('No more items can be loaded.');
+                        canLoadMore = false;
+                    }
+                }
+            } catch (e) {
+                console.log('Error during pagination:', e.message);
+                canLoadMore = false;
+            }
+        }
+
+        console.log(`Final item count before scraping: ${lastCount}`);
+        let hasItems = lastCount > 0;
 
         const scrapedData = [];
         const websiteUrl = 'https://www.repentignychevrolet.com';

@@ -61,6 +61,7 @@ def main():
 
     # Temporary file for training script
     temp_data_path = 'ml/temp_data.json'
+    os.makedirs(os.path.dirname(temp_data_path), exist_ok=True)
     with open(temp_data_path, 'w') as f:
         json.dump(data, f)
 
