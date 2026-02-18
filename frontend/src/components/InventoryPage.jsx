@@ -1,8 +1,37 @@
+import { useState } from 'react';
+
+const ITEMS_PER_PAGE = 9;
+
 const InventoryPage = ({ inventory, formatIST }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(inventory.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const paginatedInventory = inventory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    const goToPage = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start < maxVisible - 1) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+    };
+
     return (
         <div className="inventory-section">
             <div className="inventory-grid">
-                {inventory.map((car) => (
+                {paginatedInventory.map((car) => (
                     <div key={car.vin} className="car-card">
                         <div className="car-content">
                             <div className="car-badge-row">
@@ -61,7 +90,59 @@ const InventoryPage = ({ inventory, formatIST }) => {
                     </div>
                 ))}
             </div>
+
             {inventory.length === 0 && <p className="empty-msg">No active vehicles found.</p>}
+
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <div className="pagination-info">
+                        Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, inventory.length)} of {inventory.length} vehicles
+                    </div>
+                    <div className="pagination-controls">
+                        <button
+                            className="page-btn"
+                            onClick={() => goToPage(1)}
+                            disabled={currentPage === 1}
+                            title="First page"
+                        >
+                            «
+                        </button>
+                        <button
+                            className="page-btn"
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            ‹
+                        </button>
+
+                        {getPageNumbers().map((page) => (
+                            <button
+                                key={page}
+                                className={`page-btn ${page === currentPage ? 'active' : ''}`}
+                                onClick={() => goToPage(page)}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        <button
+                            className="page-btn"
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            ›
+                        </button>
+                        <button
+                            className="page-btn"
+                            onClick={() => goToPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                            title="Last page"
+                        >
+                            »
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
